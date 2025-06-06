@@ -1,0 +1,667 @@
+<!--
+The Psykeon Tarot Journal - A virtual tarot journal with a focus on independence and data ownership.
+Copyright (C) 2025 Nikodemus of Psykeon
+https://github.com/PsykeonOfficial/psykeon-tarot-journal
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <https://www.gnu.org/licenses/>.
+-->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" href="favicon.ico" type="image/x-icon">
+    <title>The Psykeon Tarot Journal</title>
+    <style>
+        * { box-sizing: border-box; }
+        @font-face { font-family: 'Medodica'; src: url('fonts/MedodicaRegular.otf') format('opentype'); font-weight: normal; font-style: normal; }
+        @font-face { font-family: 'NotoSansSymbols'; src: url('fonts/NotoSansSymbols-VariableFont_wght.ttf') format('truetype'); font-weight: normal; font-style: normal; }
+        body { background-color: black; color: #ffffff; font-family: 'Medodica', monospace; font-size: 16px; line-height: 1.5; display: flex; flex-direction: column; min-height: 100vh; margin: 0; overflow-x: hidden; }
+        .content, .form-container { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%; min-height: 80vh; overflow-y: clip; padding: 15px; }
+        .form-container { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%; min-height: 80vh; overflow-y: clip; padding: 15px; }
+        .main-title { font-size: 40px; margin-bottom: 20px; font-family: 'Medodica', monospace; }
+        #matrixRain { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: -1; }
+        ul#entry-list li { margin: 10px 0; padding: 5px; color: #ffffff; background-color: black; border: 1px solid #ffffff; cursor: pointer; text-align: center; width: 100%; box-sizing: border-box; }
+        ul#entry-list li:hover { background-color: #6d0000; }
+        .buttons { display: flex; justify-content: center; }
+        .buttons button { background: transparent; color: #ffffff; border: 2px solid hsl(0, 0%, 100%); padding: 10px 20px; margin: 0 10px; font-family: 'Medodica', monospace; cursor: pointer; }
+        .buttons button:hover { background: #ffffff; color: black; }
+        form { border: 2px solid #ffffff; padding: 40px 20px 20px 20px; background-color: rgba(0, 0, 0, 0.8); width: 100%; max-width: min(calc(90vw - 40px), 1000px); overflow-y: auto; }
+        fieldset { border: 1px solid #ffffff; margin-bottom: 15px; padding: 10px; width: 100%; }
+        legend { color: #ffffff; padding: 0 5px; }
+        label { display: block; margin-bottom: 5px; }
+        input, select, textarea { background-color: black; color: #ffffff; border: 1px solid #ffffff; padding: 5px; width: 100%; box-sizing: border-box; font-family: inherit; }
+        input:focus, select:focus, textarea:focus { outline: none; box-shadow: 0 0 5px #ffffff; }
+        textarea { height: 100px; resize: vertical; }
+        .emotion-section { margin-bottom: 15px; }
+        .emotion-section h3 { margin-bottom: 10px; }
+        .form-buttons { text-align: center; margin-top: 20px; }
+        button { background: transparent; color: #ffffff; border: 2px solid #ffffff; padding: 10px 20px; margin: 0 10px; cursor: pointer; font-family: inherit; text-transform: uppercase; }
+        button:hover { background: #ffffff; color: black; }
+        .form-columns { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        form .main-title { text-align: center; margin-bottom: 30px; }
+        @media (max-width: 900px) { .form-columns { grid-template-columns: 1fr; } }
+        p[id^="view-"] { margin: 5px 0; padding: 5px; border: 1px solid #ffffff; background-color: black; color: #ffffff; min-height: 20px; width: 100%; }
+        #entry-list { list-style-type: none; padding: 0; width: 100%; border: 1px solid #ffffff; max-width: min(calc(90vw - 40px), 1000px); max-height: 60vh; overflow-y: auto; margin: 0 auto 20px auto; }
+        #cards-table { width: 100%; border-collapse: collapse; margin-bottom: 10px; }
+        #cards-table th, #cards-table td { border: 1px solid #ffffff; padding: 5px; text-align: left; }
+        #cards-table th { background-color: rgba(0, 0, 0, 0.1); }
+        #cards-table input { margin: 0; }
+        .remove-row { padding: 5px 10px; font-size: 12px; }
+        #cards-table th:first-child, #cards-table td:first-child { width: 50px; text-align: center; }
+        footer { position: relative; width: 100%; text-align: center; padding: 10px; flex-shrink: 0; }
+        footer a:link, footer a:visited, footer a:active { color: #ffffff; text-decoration: none; }
+        footer a:hover { color: #ff0000; text-decoration: underline; }
+        .controls { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+        .card-input, .meaning-input { width: 100%; box-sizing: border-box; padding: 5px; }
+        #cards-table th:nth-child(2), #cards-table td:nth-child(2), #cards-table th:nth-child(3), #cards-table td:nth-child(3) { min-width: 150px; }
+        .sort-controls { display: flex; justify-content: center; margin-bottom: 10px; }
+        .sort-controls button { background: transparent; color: #ffffff; border: 2px solid #ffffff; padding: 5px 10px; margin: 0 5px; cursor: pointer; font-family: 'Medodica', monospace; }
+        .sort-controls button.active { background: #ffffff; color: black; }
+        .page { width: 100%; height: 100%; }
+    </style>
+</head>
+<body>
+    <canvas id="matrixRain"></canvas>
+    <div id="app">
+        <div id="index" class="page">
+            <div class="content">
+                <h1 class="main-title">The Psykeon Tarot Journal</h1>
+                <div class="sort-controls">
+                    <button id="sort-asc">Sort Ascending</button>
+                    <button id="sort-desc">Sort Descending</button>
+                </div>
+                <ul id="entry-list">
+                    <li>No entries yet. Load entries or Create one below!</li>
+                </ul>
+                <div class="buttons">
+                    <button id="createEntry">Create Entry</button>
+                    <button id="createVirtualEntry">Create Virtual Entry</button>
+                    <button id="uploadCSV">Load Entries</button>
+                    <input type="file" id="fileInput" style="display: none;" accept=".csv" multiple>
+                    <button id="downloadAllEntries">Download All Entries as CSV</button>
+                    <button id="clearAllEntries">Clear All Entries</button>
+                </div>
+            </div>
+        </div>
+        <div id="create-entry" class="page" style="display: none;">
+            <div class="form-container">
+                <h1 class="main-title">Create a Tarot Entry</h1>
+                <form id="entry-form">
+                    <div class="form-columns">
+                        <div>
+                            <fieldset>
+                                <legend>Reading Details</legend>
+                                <label>Title: <input type="text" id="title-input" required></label>
+                                <label>Date: <input type="date" id="date-input" required></label>
+                                <label>Time: <input type="time" id="time-input"></label>
+                                <label>Location: <input type="text" id="location-input"></label>
+                                <label>Weather: <input type="text" id="weather-input"></label>
+                                <label>Astrological Events: <input type="text" id="astro-input"></label>
+                            </fieldset>
+                            <fieldset>
+                                <legend>Participants</legend>
+                                <label>Querent: <input type="text" id="querent-input"></label>
+                                <label>Reader: <input type="text" id="reader-input"></label>
+                            </fieldset>
+                            <fieldset>
+                                <legend>Emotions Wheel</legend>
+                                <div class="emotion-section">
+                                    <h3>Querent</h3>
+                                    <label>Emotion: <input type="text" id="querent-emotion"></label>
+                                    <label>Intensity (0-10): <input type="range" id="querent-intensity-slider" min="0" max="10" value="0"></label>
+                                </div>
+                                <div class="emotion-section">
+                                    <h3>Reader</h3>
+                                    <label>Emotion: <input type="text" id="reader-emotion"></label>
+                                    <label>Intensity (0-10): <input type="range" id="reader-intensity-slider" min="0" max="10" value="0"></label>
+                                </div>
+                            </fieldset>
+                        </div>
+                        <div>
+                            <fieldset>
+                                <legend>Question/Intention</legend>
+                                <textarea id="question-input" placeholder="What is the purpose or question for this reading?"></textarea>
+                            </fieldset>
+                            <fieldset>
+                                <legend>Deck and Spread</legend>
+                                <label>Deck: <input type="text" id="deck-input"></label>
+                                <label>Spread: <input type="text" id="spread"></label>
+                            </fieldset>
+                            <fieldset>
+                                <legend>Cards and Meanings</legend>
+                                <table id="cards-table">
+                                    <thead>
+                                        <tr><th>Position</th><th>Card</th><th>Meaning</th><th></th></tr>
+                                    </thead>
+                                    <tbody id="cards-table-body"></tbody>
+                                </table>
+                                <button type="button" id="add-card-row">Add Row</button>
+                            </fieldset>
+                            <fieldset>
+                                <legend>Interpretation</legend>
+                                <textarea id="interpretation-input" placeholder="Your interpretation of the reading"></textarea>
+                            </fieldset>
+                            <fieldset>
+                                <legend>Notes</legend>
+                                <textarea id="notes-input" placeholder="Additional notes"></textarea>
+                            </fieldset>
+                        </div>
+                    </div>
+                    <div class="form-buttons">
+                        <button type="button" id="back-button">Back</button>
+                        <button type="button" id="save-button">Save Entry</button>
+                        <button type="button" id="download-button">Download as CSV</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        <div id="view-entry" class="page" style="display: none;">
+            <div class="form-container">
+                <h1 class="main-title">View Tarot Entry</h1>
+                <form id="view-entry-form">
+                    <div class="form-columns">
+                        <div>
+                            <fieldset>
+                                <legend>Reading Details</legend>
+                                <p id="view-title"></p>
+                                <p id="view-date"></p>
+                                <p id="view-time"></p>
+                                <p id="view-location"></p>
+                                <p id="view-weather"></p>
+                                <p id="view-astro"></p>
+                            </fieldset>
+                            <fieldset>
+                                <legend>Participants</legend>
+                                <p id="view-querent"></p>
+                                <p id="view-reader"></p>
+                            </fieldset>
+                            <fieldset>
+                                <legend>Emotions Wheel</legend>
+                                <p id="view-querent-emotion"></p>
+                                <p id="view-querent-intensity"></p>
+                                <p id="view-reader-emotion"></p>
+                                <p id="view-reader-intensity"></p>
+                            </fieldset>
+                        </div>
+                        <div>
+                            <fieldset>
+                                <legend>Question/Intention</legend>
+                                <p id="view-question"></p>
+                            </fieldset>
+                            <fieldset>
+                                <legend>Deck and Spread</legend>
+                                <p id="view-deck"></p>
+                                <p id="view-spread"></p>
+                            </fieldset>
+                            <fieldset>
+                                <legend>Cards and Meanings</legend>
+                                <table id="cards-table">
+                                    <thead>
+                                        <tr><th>Position</th><th>Card</th><th>Meaning</th></tr>
+                                    </thead>
+                                    <tbody id="cards-table-body"></tbody>
+                                </table>
+                            </fieldset>
+                            <fieldset>
+                                <legend>Interpretation</legend>
+                                <p id="view-interpretation"></p>
+                            </fieldset>
+                            <fieldset>
+                                <legend>Notes</legend>
+                                <p id="view-notes"></p>
+                            </fieldset>
+                        </div>
+                    </div>
+                    <div class="form-buttons">
+                        <button type="button" id="back-button">Back</button>
+                        <button type="button" id="edit-button">Edit</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        <div id="create-virtual-entry" class="page" style="display: none;">
+            <div class="form-container">
+                <h1 class="main-title">Create a Virtual Tarot Entry</h1>
+                <form id="entry-form">
+                    <div class="form-columns">
+                        <div>
+                            <fieldset>
+                                <legend>Reading Details</legend>
+                                <label>Title: <input type="text" id="title-input" required></label>
+                                <label>Date: <input type="date" id="date-input" required></label>
+                                <label>Time: <input type="time" id="time-input"></label>
+                                <label>Location: <input type="text" id="location-input"></label>
+                                <label>Weather: <input type="text" id="weather-input"></label>
+                                <label>Astrological Events: <input type="text" id="astro-input"></label>
+                            </fieldset>
+                            <fieldset>
+                                <legend>Participants</legend>
+                                <label>Querent: <input type="text" id="querent-input"></label>
+                                <label>Reader: <input type="text" id="reader-input"></label>
+                            </fieldset>
+                            <fieldset>
+                                <legend>Emotions Wheel</legend>
+                                <div class="emotion-section">
+                                    <h3>Querent</h3>
+                                    <label>Emotion: <input type="text" id="querent-emotion"></label>
+                                    <label>Intensity (0-10): <input type="range" id="querent-intensity-slider" min="0" max="10" value="0"></label>
+                                </div>
+                                <div class="emotion-section">
+                                    <h3>Reader</h3>
+                                    <label>Emotion: <input type="text" id="reader-emotion"></label>
+                                    <label>Intensity (0-10): <input type="range" id="reader-intensity-slider" min="0" max="10" value="0"></label>
+                                </div>
+                            </fieldset>
+                        </div>
+                        <div>
+                            <fieldset>
+                                <legend>Question/Intention</legend>
+                                <textarea id="question-input" placeholder="What is the purpose or question for this reading?"></textarea>
+                            </fieldset>
+                            <fieldset>
+                                <legend>Deck and Spread</legend>
+                                <p>Deck: The Psykeon Virtual Tarot Deck</p>
+                                <label>Spread: <input type="text" id="spread"></label>
+                            </fieldset>
+                            <fieldset>
+                                <legend>Cards and Meanings</legend>
+                                <div class="controls">
+                                    <label><input type="checkbox" id="use-reversals"> Use Reversals</label>
+                                    <button type="button" id="draw-card">Draw Card</button>
+                                    <button type="button" id="reset-deck">Reset Deck</button>
+                                </div>
+                                <table id="cards-table">
+                                    <thead>
+                                        <tr><th>Position</th><th>Card</th><th>Meaning</th><th></th></tr>
+                                    </thead>
+                                    <tbody id="cards-table-body"></tbody>
+                                </table>
+                            </fieldset>
+                            <fieldset>
+                                <legend>Interpretation</legend>
+                                <textarea id="interpretation-input" placeholder="Your interpretation of the reading"></textarea>
+                            </fieldset>
+                            <fieldset>
+                                <legend>Notes</legend>
+                                <textarea id="notes-input" placeholder="Additional notes"></textarea>
+                            </fieldset>
+                        </div>
+                    </div>
+                    <div class="form-buttons">
+                        <button type="button" id="back-button">Back</button>
+                        <button type="button" id="save-button">Save Entry</button>
+                        <button type="button" id="download-button">Download as CSV</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    <footer>
+        © 2025 <a href="https://psykeon.com" target="_blank" rel="noopener">Nikodemus of Psykeon</a> | <a href="README.markdown" target="_blank" rel="noopener">Read Me</a> | <a href="LICENSE.markdown" target="_blank" rel="noopener">License</a>
+    </footer>
+    <script>
+        console.log('The Psykeon Tarot Journal is running');
+        let currentPage = 'index';
+        let virtualDeck = null;
+        let currentSortOrder = localStorage.getItem('sortOrder') || 'asc';
+
+        class TarotDeck {
+            constructor() {
+                this.cards = ["0 - The Fool", "I - The Magician", "II - The High Priestess", "III - The Empress", "IV - The Emperor", "V - The Hierophant", "VI - The Lovers", "VII - The Chariot", "VIII - Strength", "IX - The Hermit", "X - Wheel of Fortune", "XI - Justice", "XII - The Hanged Man", "XIII - Death", "XIV - Temperance", "XV - The Devil", "XVI - The Tower", "XVII - The Star", "XVIII - The Moon", "XIX - The Sun", "XX - Judgement", "XXI - The World", "Ace of Cups", "Two of Cups", "Three of Cups", "Four of Cups", "Five of Cups", "Six of Cups", "Seven of Cups", "Eight of Cups", "Nine of Cups", "Ten of Cups", "Page of Cups", "Knight of Cups", "Queen of Cups", "King of Cups", "Ace of Pentacles", "Two of Pentacles", "Three of Pentacles", "Four of Pentacles", "Five of Pentacles", "Six of Pentacles", "Seven of Pentacles", "Eight of Pentacles", "Nine of Pentacles", "Ten of Pentacles", "Page of Pentacles", "Knight of Pentacles", "Queen of Pentacles", "King of Pentacles", "Ace of Swords", "Two of Swords", "Three of Swords", "Four of Swords", "Five of Swords", "Six of Swords", "Seven of Swords", "Eight of Swords", "Nine of Swords", "Ten of Swords", "Page of Swords", "Knight of Swords", "Queen of Swords", "King of Swords", "Ace of Wands", "Two of Wands", "Three of Wands", "Four of Wands", "Five of Wands", "Six of Wands", "Seven of Wands", "Eight of Wands", "Nine of Wands", "Ten of Wands", "Page of Wands", "Knight of Wands", "Queen of Wands", "King of Wands"];
+                this.availableCards = [...this.cards];
+                this.meanings = {
+                    "0 - The Fool": "New beginnings, innocence", "0 - The Fool (Reversed)": "Recklessness, naivety", "I - The Magician": "Manifestation, skill", "I - The Magician (Reversed)": "Manipulation, trickery", "II - The High Priestess": "Intuition, mystery", "II - The High Priestess (Reversed)": "Secrets, disconnection", "III - The Empress": "Abundance, nurturing", "III - The Empress (Reversed)": "Dependence, neglect", "IV - The Emperor": "Authority, structure", "IV - The Emperor (Reversed)": "Domination, rigidity", "V - The Hierophant": "Tradition, guidance", "V - The Hierophant (Reversed)": "Rebellion, dogma", "VI - The Lovers": "Love, harmony", "VI - The Lovers (Reversed)": "Conflict, imbalance", "VII - The Chariot": "Willpower, direction", "VII - The Chariot (Reversed)": "Lack of control, delay", "VIII - Strength": "Courage, resilience", "VIII - Strength (Reversed)": "Weakness, doubt", "IX - The Hermit": "Wisdom, solitude", "IX - The Hermit (Reversed)": "Isolation, withdrawal", "X - Wheel of Fortune": "Luck, cycles", "X - Wheel of Fortune (Reversed)": "Misfortune, resistance", "XI - Justice": "Fairness, truth", "XI - Justice (Reversed)": "Injustice, dishonesty", "XII - The Hanged Man": "Surrender, perspective", "XII - The Hanged Man (Reversed)": "Stagnation, resistance", "XIII - Death": "Transformation, endings", "XIII - Death (Reversed)": "Stagnation, fear of change", "XIV - Temperance": "Balance, patience", "XIV - Temperance (Reversed)": "Imbalance, excess", "XV - The Devil": "Bondage, temptation", "XV - The Devil (Reversed)": "Freedom, release", "XVI - The Tower": "Sudden change, upheaval", "XVI - The Tower (Reversed)": "Avoidance, fear of change", "XVII - The Star": "Hope, inspiration", "XVII - The Star (Reversed)": "Despair, lack of faith", "XVIII - The Moon": "Illusion, intuition", "XVIII - The Moon (Reversed)": "Clarity, fear", "XIX - The Sun": "Joy, success", "XIX - The Sun (Reversed)": "Sadness, delay", "XX - Judgement": "Awakening, renewal", "XX - Judgement (Reversed)": "Self-doubt, refusal", "XXI - The World": "Completion, fulfillment", "XXI - The World (Reversed)": "Incompletion, stagnation", "Ace of Cups": "Love, new emotions", "Ace of Cups (Reversed)": "Blocked emotions, emptiness", "Two of Cups": "Partnership, unity", "Two of Cups (Reversed)": "Disharmony, separation", "Three of Cups": "Celebration, friendship", "Three of Cups (Reversed)": "Excess, isolation", "Four of Cups": "Apathy, contemplation", "Four of Cups (Reversed)": "Interest, acceptance", "Five of Cups": "Loss, regret", "Five of Cups (Reversed)": "Recovery, hope", "Six of Cups": "Nostalgia, memories", "Six of Cups (Reversed)": "Clinging, moving on", "Seven of Cups": "Choices, fantasy", "Seven of Cups (Reversed)": "Clarity, decision", "Eight of Cups": "Departure, search", "Eight of Cups (Reversed)": "Stagnation, return", "Nine of Cups": "Satisfaction, wish fulfillment", "Nine of Cups (Reversed)": "Greed, dissatisfaction", "Ten of Cups": "Harmony, happiness", "Ten of Cups (Reversed)": "Conflict, disconnection", "Page of Cups": "Creativity, messages", "Page of Cups (Reversed)": "Immaturity, emotional blocks", "Knight of Cups": "Romance, idealism", "Knight of Cups (Reversed)": "Moodiness, unrealistic", "Queen of Cups": "Compassion, intuition", "Queen of Cups (Reversed)": "Emotional instability", "King of Cups": "Emotional balance, wisdom", "King of Cups (Reversed)": "Manipulation, coldness", "Ace of Pentacles": "Opportunity, prosperity", "Ace of Pentacles (Reversed)": "Missed chance, greed", "Two of Pentacles": "Balance, adaptability", "Two of Pentacles (Reversed)": "Overwhelm, imbalance", "Three of Pentacles": "Teamwork, skill", "Three of Pentacles (Reversed)": "Disorganization, lack of effort", "Four of Pentacles": "Security, control", "Four of Pentacles (Reversed)": "Greed, loss", "Five of Pentacles": "Poverty, insecurity", "Five of Pentacles (Reversed)": "Recovery, charity", "Six of Pentacles": "Generosity, sharing", "Six of Pentacles (Reversed)": "Selfishness, debt", "Seven of Pentacles": "Patience, investment", "Seven of Pentacles (Reversed)": "Impatience, loss", "Eight of Pentacles": "Diligence, mastery", "Eight of Pentacles (Reversed)": "Laziness, lack of focus", "Nine of Pentacles": "Abundance, independence", "Nine of Pentacles (Reversed)": "Dependence, overwork", "Ten of Pentacles": "Legacy, wealth", "Ten of Pentacles (Reversed)": "Loss, instability", "Page of Pentacles": "Ambition, learning", "Page of Pentacles (Reversed)": "Procrastination, lack of focus", "Knight of Pentacles": "Reliability, hard work", "Knight of Pentacles (Reversed)": "Stagnation, laziness", "Queen of Pentacles": "Nurturing, practicality", "Queen of Pentacles (Reversed)": "Neglect, materialism", "King of Pentacles": "Stability, success", "King of Pentacles (Reversed)": "Greed, stubbornness", "Ace of Swords": "Clarity, truth", "Ace of Swords (Reversed)": "Confusion, dishonesty", "Two of Swords": "Indecision, stalemate", "Two of Swords (Reversed)": "Decision, clarity", "Three of Swords": "Heartbreak, sorrow", "Three of Swords (Reversed)": "Healing, forgiveness", "Four of Swords": "Rest, recovery", "Four of Swords (Reversed)": "Burnout, restlessness", "Five of Swords": "Conflict, defeat", "Five of Swords (Reversed)": "Reconciliation, moving on", "Six of Swords": "Transition, relief", "Six of Swords (Reversed)": "Stagnation, resistance", "Seven of Swords": "Deception, strategy", "Seven of Swords (Reversed)": "Honesty, exposure", "Eight of Swords": "Restriction, fear", "Eight of Swords (Reversed)": "Freedom, release", "Nine of Swords": "Anxiety, despair", "Nine of Swords (Reversed)": "Hope, recovery", "Ten of Swords": "Betrayal, end", "Ten of Swords (Reversed)": "Survival, renewal", "Page of Swords": "Curiosity, vigilance", "Page of Swords (Reversed)": "Gossip, impulsiveness", "Knight of Swords": "Action, ambition", "Knight of Swords (Reversed)": "Recklessness, haste", "Queen of Swords": "Clarity, independence", "Queen of Swords (Reversed)": "Coldness, cruelty", "King of Swords": "Authority, logic", "King of Swords (Reversed)": "Tyranny, manipulation", "Ace of Wands": "Inspiration, potential", "Ace of Wands (Reversed)": "Delay, lack of passion", "Two of Wands": "Planning, vision", "Two of Wands (Reversed)": "Fear, indecision", "Three of Wands": "Expansion, foresight", "Three of Wands (Reversed)": "Delays, obstacles", "Four of Wands": "Celebration, stability", "Four of Wands (Reversed)": "Tension, instability", "Five of Wands": "Conflict, competition", "Five of Wands (Reversed)": "Harmony, resolution", "Six of Wands": "Victory, recognition", "Six of Wands (Reversed)": "Failure, ego", "Seven of Wands": "Defense, perseverance", "Seven of Wands (Reversed)": "Overwhelm, surrender", "Eight of Wands": "Speed, progress", "Eight of Wands (Reversed)": "Delay, frustration", "Nine of Wands": "Resilience, caution", "Nine of Wands (Reversed)": "Exhaustion, paranoia", "Ten of Wands": "Burden, responsibility", "Ten of Wands (Reversed)": "Relief, delegation", "Page of Wands": "Enthusiasm, exploration", "Page of Wands (Reversed)": "Hesitation, lack of direction", "Knight of Wands": "Energy, adventure", "Knight of Wands (Reversed)": "Impulsiveness, recklessness", "Queen of Wands": "Confidence, passion", "Queen of Wands (Reversed)": "Selfishness, jealousy", "King of Wands": "Leadership, vision", "King of Wands (Reversed)": "Domination, impulsiveness"
+                };
+            }
+            drawCard(useReversals) {
+                if (this.availableCards.length === 0) { alert("No more cards to draw!"); return null; }
+                const card = this.availableCards[Math.floor(Math.random() * this.availableCards.length)];
+                this.availableCards = this.availableCards.filter(c => c !== card);
+                const isReversed = useReversals && Math.random() < 0.5;
+                const cardName = isReversed ? `${card} (Reversed)` : card;
+                return { card: cardName, meaning: this.meanings[cardName] || "No meaning available" };
+            }
+            reset() { this.availableCards = [...this.cards]; }
+        }
+
+        function initMatrixRain() {
+            const canvas = document.getElementById('matrixRain');
+            const ctx = canvas.getContext('2d');
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            const codePoints = [0x2660, 0x2665, 0x2666, 0x2663, 0x2648, 0x2649, 0x264A, 0x264B, 0x264C, 0x264D, 0x264E, 0x264F, 0x2650, 0x2651, 0x2652, 0x2653, 0x2609, 0x263D, 0x263F, 0x2640, 0x2642, 0x2643, 0x2644, 0x2645, 0x2646, 0x2647, 0x260C, 0x26B9, 0x25A1, 0x25B3, 0x260D, ...Array.from({length: 0x16EA - 0x16A0 + 1}, (_, i) => 0x16A0 + i)];
+            const letters = String.fromCodePoint(...codePoints);
+            const fontSize = 20;
+            let columns = Math.floor(canvas.width / fontSize);
+            let drops = Array(columns).fill(0);
+            function draw() {
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                ctx.fillStyle = '#330000';
+                ctx.font = `${fontSize}px 'NotoSansSymbols'`;
+                for (let i = 0; i < drops.length; i++) {
+                    const text = letters.charAt(Math.floor(Math.random() * letters.length));
+                    ctx.fillText(text, i * fontSize, drops[i] * fontSize);
+                    if (drops[i] * fontSize > canvas.height && Math.random() > 0.975) drops[i] = 0; else drops[i]++;
+                }
+            }
+            function initDrops() { columns = Math.floor(canvas.width / fontSize); drops = Array(columns).fill(0); }
+            setInterval(draw, 33);
+            window.addEventListener('resize', () => { canvas.width = window.innerWidth; canvas.height = window.innerHeight; initDrops(); });
+        }
+
+        function showPage(pageId, params = {}) {
+            currentPage = pageId;
+            document.querySelectorAll('.page').forEach(page => {
+                if (page.id === pageId) {
+                    page.style.display = 'block';
+                    if (pageId === 'index') renderEntryList();
+                    else if (pageId === 'view-entry' && params.id !== undefined) loadEntryForView(params.id);
+                    else if (pageId === 'create-entry' || pageId === 'create-virtual-entry') resetForm(pageId);
+                } else page.style.display = 'none';
+            });
+        }
+
+        function resetForm(pageId) {
+            const container = document.getElementById(pageId);
+            container.querySelectorAll('input[type="text"], textarea').forEach(el => el.value = '');
+            container.querySelector('#date-input').value = new Date().toISOString().split('T')[0];
+            container.querySelector('#querent-intensity-slider').value = 0;
+            container.querySelector('#reader-intensity-slider').value = 0;
+            const tbody = container.querySelector('#cards-table-body');
+            tbody.innerHTML = '';
+            if (pageId === 'create-entry') addCardRow(tbody);
+            if (pageId === 'create-virtual-entry') virtualDeck = new TarotDeck();
+        }
+
+        function loadEntryForView(id) {
+            const entries = retrieveEntries();
+            const entry = entries[parseInt(id, 10)] || {};
+            const container = document.getElementById('view-entry');
+            container.querySelector('#view-title').textContent = entry.title || '';
+            container.querySelector('#view-date').textContent = entry.date || '';
+            container.querySelector('#view-time').textContent = entry.time || '';
+            container.querySelector('#view-location').textContent = entry.location || '';
+            container.querySelector('#view-weather').textContent = entry.weather || '';
+            container.querySelector('#view-astro').textContent = entry.astrological_events || '';
+            container.querySelector('#view-querent').textContent = entry.querent || '';
+            container.querySelector('#view-reader').textContent = entry.reader || '';
+            container.querySelector('#view-deck').textContent = entry.deck || '';
+            container.querySelector('#view-spread').textContent = entry.spread || '';
+            container.querySelector('#view-question').textContent = entry.question || '';
+            container.querySelector('#view-interpretation').textContent = entry.interpretation || '';
+            container.querySelector('#view-notes').textContent = entry.notes || '';
+            container.querySelector('#view-querent-emotion').textContent = `Emotion: ${entry.emotions?.querent?.emotion || ''}`;
+            container.querySelector('#view-querent-intensity').textContent = `Intensity: ${entry.emotions?.querent?.intensity || ''}`;
+            container.querySelector('#view-reader-emotion').textContent = `Emotion: ${entry.emotions?.reader?.emotion || ''}`;
+            container.querySelector('#view-reader-intensity').textContent = `Intensity: ${entry.emotions?.reader?.intensity || ''}`;
+            const tbody = container.querySelector('#cards-table-body');
+            tbody.innerHTML = '';
+            if (entry.cards && entry.meanings) {
+                entry.cards.forEach((card, index) => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `<td>${index + 1}</td><td>${card || ''}</td><td>${entry.meanings[index] || ''}</td>`;
+                    tbody.appendChild(row);
+                });
+            }
+        }
+
+        function saveEntry(entry, index = null) {
+            let entries = JSON.parse(localStorage.getItem('tarotEntries') || '[]');
+            if (index !== null && index >= 0 && index < entries.length) entries[index] = entry;
+            else entries.push(entry);
+            localStorage.setItem('tarotEntries', JSON.stringify(entries));
+        }
+
+        function retrieveEntries() { return JSON.parse(localStorage.getItem('tarotEntries') || '[]'); }
+
+        function escapeCSV(value) {
+            if (value === undefined || value === null) return '';
+            const str = value.toString();
+            if (str.includes(',') || str.includes('"') || str.includes('\n')) return `"${str.replace(/"/g, '""')}"`;
+            return str;
+        }
+
+        function generateCSV(entries) {
+            const maxCards = Math.max(0, ...entries.map(entry => entry.cards ? entry.cards.length : 0));
+            const cardHeaders = Array.from({ length: maxCards }, (_, i) => `card${i + 1}`);
+            const meaningHeaders = Array.from({ length: maxCards }, (_, i) => `meaning${i + 1}`);
+            const headers = ['title', 'date', 'time', 'location', 'weather', 'astrological_events', 'querent', 'reader', 'querent_emotion', 'querent_intensity', 'reader_emotion', 'reader_intensity', 'deck', 'spread', 'question', ...cardHeaders, ...meaningHeaders, 'interpretation', 'notes'];
+            const rows = entries.map(entry => {
+                const cardColumns = cardHeaders.map((_, i) => escapeCSV(entry.cards?.[i] || ''));
+                const meaningColumns = meaningHeaders.map((_, i) => escapeCSV(entry.meanings?.[i] || ''));
+                return [escapeCSV(entry.title), escapeCSV(entry.date), escapeCSV(entry.time), escapeCSV(entry.location), escapeCSV(entry.weather), escapeCSV(entry.astrological_events), escapeCSV(entry.querent), escapeCSV(entry.reader), escapeCSV(entry.emotions?.querent?.emotion || ''), escapeCSV(entry.emotions?.querent?.intensity || ''), escapeCSV(entry.emotions?.reader?.emotion || ''), escapeCSV(entry.emotions?.reader?.intensity || ''), escapeCSV(entry.deck), escapeCSV(entry.spread), escapeCSV(entry.question), ...cardColumns, ...meaningColumns, escapeCSV(entry.interpretation), escapeCSV(entry.notes)];
+            });
+            return [headers.join(','), ...rows.map(row => row.join(','))].join('\n');
+        }
+
+        function downloadCSV(entries) {
+            const csv = generateCSV(entries);
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            let fileName = entries.length === 1 ? `${entries[0].title || 'Untitled'}-${entries[0].date || 'NoDate'}-${entries[0].querent || 'Unknown'}`.replace(/[^a-zA-Z0-9-_]/g, '_') + '.csv' : `tarot-entries-${new Date().toISOString().split('T')[0]}.csv`;
+            a.href = url;
+            a.download = fileName;
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        function parseCSV(csvText) {
+            const lines = csvText.split("\n").filter(line => line.trim() !== "");
+            const headers = lines[0].split(",").map(h => h.trim());
+            const entries = [];
+            for (let i = 1; i < lines.length; i++) {
+                const values = lines[i].split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/).map(v => v.replace(/^"|"$/g, '').replace(/""/g, '"'));
+                if (values.length === headers.length) {
+                    const entry = { emotions: { querent: {}, reader: {} } };
+                    const cards = [];
+                    const meanings = [];
+                    headers.forEach((header, index) => {
+                        if (header.startsWith('card')) { if (values[index]) cards.push(values[index]); }
+                        else if (header.startsWith('meaning')) { if (values[index]) meanings.push(values[index]); }
+                        else if (header === 'querent_emotion') entry.emotions.querent.emotion = values[index];
+                        else if (header === 'querent_intensity') entry.emotions.querent.intensity = parseInt(values[index], 10) || 0;
+                        else if (header === 'reader_emotion') entry.emotions.reader.emotion = values[index];
+                        else if (header === 'reader_intensity') entry.emotions.reader.intensity = parseInt(values[index], 10) || 0;
+                        else entry[header] = values[index] || '';
+                    });
+                    entry.cards = cards;
+                    entry.meanings = meanings;
+                    entries.push(entry);
+                }
+            }
+            return entries;
+        }
+
+        function updateRowNumbers(tbody) {
+            tbody.querySelectorAll('tr').forEach((row, index) => {
+                const numberCell = row.querySelector('.row-number');
+                if (numberCell) numberCell.textContent = index + 1;
+            });
+        }
+
+        function addCardRow(tbody, card = '', meaning = '') {
+            const row = document.createElement('tr');
+            row.innerHTML = `<td class="row-number"></td><td><input type="text" class="card-input" value="${card}" placeholder="Card Name"></td><td><input type="text" class="meaning-input" value="${meaning}" placeholder="Meaning"></td><td><button type="button" class="remove-row">x</button></td>`;
+            row.querySelector('.remove-row').addEventListener('click', () => { row.remove(); updateRowNumbers(tbody); });
+            tbody.appendChild(row);
+            updateRowNumbers(tbody);
+        }
+
+        function getFormData() {
+            const container = document.getElementById(currentPage);
+            const tbody = container.querySelector('#cards-table-body');
+            const cards = [];
+            const meanings = [];
+            tbody.querySelectorAll('tr').forEach(row => {
+                const cardInput = row.querySelector('.card-input').value;
+                const meaningInput = row.querySelector('.meaning-input').value;
+                if (cardInput || meaningInput) { cards.push(cardInput); meanings.push(meaningInput); }
+            });
+            const deckInput = container.querySelector('#deck-input');
+            return {
+                title: container.querySelector('#title-input').value,
+                date: container.querySelector('#date-input').value,
+                time: container.querySelector('#time-input').value,
+                location: container.querySelector('#location-input').value,
+                weather: container.querySelector('#weather-input').value,
+                astrological_events: container.querySelector('#astro-input').value,
+                querent: container.querySelector('#querent-input').value,
+                reader: container.querySelector('#reader-input').value,
+                deck: deckInput ? deckInput.value : 'The Psykeon Virtual Tarot Deck',
+                spread: container.querySelector('#spread').value,
+                question: container.querySelector('#question-input').value,
+                cards: cards,
+                meanings: meanings,
+                interpretation: container.querySelector('#interpretation-input').value,
+                notes: container.querySelector('#notes-input').value,
+                emotions: {
+                    querent: { emotion: container.querySelector('#querent-emotion').value, intensity: parseInt(container.querySelector('#querent-intensity-slider').value, 10) },
+                    reader: { emotion: container.querySelector('#reader-emotion').value, intensity: parseInt(container.querySelector('#reader-intensity-slider').value, 10) }
+                }
+            };
+        }
+
+        function saveCurrentEntry() {
+            const entry = getFormData();
+            saveEntry(entry);
+            alert('Entry saved to localStorage!');
+        }
+
+        function downloadCurrentEntryCSV() { downloadCSV([getFormData()]); }
+
+        function downloadAllEntriesCSV() { downloadCSV(retrieveEntries()); }
+
+        function renderEntryList() {
+            let entries = retrieveEntries();
+            let indices = entries.map((_, index) => index);
+            indices.sort((a, b) => {
+                const dateA = entries[a].date || '0000-00-00';
+                const dateB = entries[b].date || '0000-00-00';
+                return currentSortOrder === 'asc' ? dateA.localeCompare(dateB) : dateB.localeCompare(dateA);
+            });
+            const entryList = document.getElementById('entry-list');
+            entryList.innerHTML = '';
+            if (entries.length === 0) entryList.innerHTML = '<li>No entries yet. Load entries or Create one below!</li>';
+            else {
+                indices.forEach((originalIndex) => {
+                    const entry = entries[originalIndex];
+                    const li = document.createElement('li');
+                    li.textContent = `${entry.title || 'Untitled'} | ${entry.date || 'No Date'} | Querent: ${entry.querent || 'Unknown'}`;
+                    li.style.cursor = 'pointer';
+                    const deleteButton = document.createElement('button');
+                    deleteButton.textContent = 'x';
+                    deleteButton.style.marginLeft = '10px';
+                    deleteButton.addEventListener('click', (e) => { e.stopPropagation(); deleteEntry(originalIndex); });
+                    li.appendChild(deleteButton);
+                    li.addEventListener('click', () => { window.location.hash = `view-entry/${originalIndex}`; });
+                    entryList.appendChild(li);
+                });
+            }
+        }
+
+        function deleteEntry(index) {
+            let entries = retrieveEntries();
+            entries.splice(index, 1);
+            localStorage.setItem('tarotEntries', JSON.stringify(entries));
+            renderEntryList();
+        }
+
+        function clearAllEntries() {
+            if (confirm('Are you sure you want to clear all entries? This cannot be undone.')) {
+                localStorage.removeItem('tarotEntries');
+                renderEntryList();
+                alert('All entries cleared.');
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            document.fonts.load('16px NotoSansSymbols').then(() => initMatrixRain());
+            document.getElementById('sort-asc').addEventListener('click', () => {
+                currentSortOrder = 'asc';
+                localStorage.setItem('sortOrder', currentSortOrder);
+                document.getElementById('sort-asc').classList.add('active');
+                document.getElementById('sort-desc').classList.remove('active');
+                renderEntryList();
+            });
+            document.getElementById('sort-desc').addEventListener('click', () => {
+                currentSortOrder = 'desc';
+                localStorage.setItem('sortOrder', currentSortOrder);
+                document.getElementById('sort-desc').classList.add('active');
+                document.getElementById('sort-asc').classList.remove('active');
+                renderEntryList();
+            });
+            if (currentSortOrder === 'asc') {
+                document.getElementById('sort-asc').classList.add('active');
+                document.getElementById('sort-desc').classList.remove('active');
+            } else {
+                document.getElementById('sort-desc').classList.add('active');
+                document.getElementById('sort-asc').classList.remove('active');
+            }
+            document.getElementById('createEntry').addEventListener('click', () => window.location.hash = 'create-entry');
+            document.getElementById('createVirtualEntry').addEventListener('click', () => window.location.hash = 'create-virtual-entry');
+            document.getElementById('uploadCSV').addEventListener('click', () => document.getElementById('fileInput').click());
+            document.getElementById('fileInput').addEventListener('change', (event) => {
+                const file = event.target.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        const csv = e.target.result;
+                        const existingEntries = retrieveEntries();
+                        const newEntries = parseCSV(csv);
+                        localStorage.setItem('tarotEntries', JSON.stringify(existingEntries.concat(newEntries)));
+                        alert('Entries loaded successfully!');
+                        renderEntryList();
+                    };
+                    reader.readAsText(file);
+                }
+            });
+            document.getElementById('downloadAllEntries').addEventListener('click', downloadAllEntriesCSV);
+            document.getElementById('clearAllEntries').addEventListener('click', clearAllEntries);
+            document.querySelectorAll('#create-entry #save-button, #create-virtual-entry #save-button').forEach(btn => btn.addEventListener('click', saveCurrentEntry));
+            document.querySelectorAll('#create-entry #download-button, #create-virtual-entry #download-button').forEach(btn => btn.addEventListener('click', downloadCurrentEntryCSV));
+            document.querySelectorAll('#create-entry #back-button, #create-virtual-entry #back-button, #view-entry #back-button').forEach(btn => btn.addEventListener('click', () => window.location.hash = ''));
+            document.getElementById('create-entry').querySelector('#add-card-row').addEventListener('click', () => addCardRow(document.getElementById('create-entry').querySelector('#cards-table-body')));
+            document.getElementById('create-virtual-entry').querySelector('#draw-card').addEventListener('click', () => {
+                const useReversals = document.getElementById('create-virtual-entry').querySelector('#use-reversals').checked;
+                const drawn = virtualDeck.drawCard(useReversals);
+                if (drawn) addCardRow(document.getElementById('create-virtual-entry').querySelector('#cards-table-body'), drawn.card, drawn.meaning);
+            });
+            document.getElementById('create-virtual-entry').querySelector('#reset-deck').addEventListener('click', () => {
+                virtualDeck.reset();
+                document.getElementById('create-virtual-entry').querySelector('#cards-table-body').innerHTML = '';
+                alert('Deck reset. All cards are available again.');
+            });
+            document.getElementById('view-entry').querySelector('#edit-button').addEventListener('click', () => {
+                const hash = window.location.hash;
+                if (hash.startsWith('#view-entry/')) window.location.hash = `create-entry/${hash.split('/')[1]}`;
+            });
+
+            window.addEventListener('hashchange', () => {
+                const hash = window.location.hash.substring(1);
+                if (hash === 'create-entry') showPage('create-entry');
+                else if (hash === 'create-virtual-entry') showPage('create-virtual-entry');
+                else if (hash.startsWith('view-entry/')) showPage('view-entry', { id: hash.split('/')[1] });
+                else showPage('index');
+            });
+
+            if (window.location.hash) window.dispatchEvent(new Event('hashchange'));
+            else showPage('index');
+        });
+    </script>
+</body>
+</html>
